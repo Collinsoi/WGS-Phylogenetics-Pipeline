@@ -457,7 +457,7 @@ outputs were `campy_final.treefile`, `campy_final.contree`, and
 
 A more complete quantitative interpretation of assembly QC, AMR determinants,
 virulence-gene distribution, recombination, and phylogenetic structure is
-available in [`RESULTS.md`](RESULTS.md).
+available in [`Results.md`](Results.md).
 
 ## Limitations
 
@@ -494,7 +494,7 @@ available in [`RESULTS.md`](RESULTS.md).
 ```text
 WGS-Phylogenetics-Pipeline/
 ├── README.md
-├── RESULTS.md
+├── Results.md
 ├── environment.yml
 ├── run_pipeline.sh
 ├── metadata/

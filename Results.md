@@ -20,19 +20,17 @@ GC contents close to 30%.
 CJ006 was a clear exception. Its original assembly was ~2.97 Mb with 43.91% GC,
 1,402 contigs, and an N50 of 91,771 bp. Assembly-level Kraken2 classification
 showed that 61.25% of contigs were assigned to *Bifidobacterium pullorum*,
-whereas only 1.51% were assigned to *Campylobacter*. :chatgpt-content-reference{index="0"}
-:chatgpt-content-reference{index="1"}
+whereas only 1.51% were assigned to *Campylobacter*.
 
 Read-level screening of CJ006 nevertheless showed that 88.85% of reads were
 assigned to the genus *Campylobacter*, while approximately 1.06% were assigned
-to *B. pullorum*. :chatgpt-content-reference{index="2"}
-:chatgpt-content-reference{index="3"}
+to *B. pullorum*.
 
 After retaining *Campylobacter*-classified reads and reassembling the sample,
 the CJ006 assembly improved to approximately 1.74 Mb, 30.12% GC, 29 contigs,
 N50 130,036 bp, and L50 4. Post-rescue Kraken2 classification was dominated by
 *Campylobacter* and no longer showed the strong *Bifidobacterium* signal seen
-in the original assembly. :chatgpt-content-reference{index="4"}
+in the original assembly.
 
 This demonstrates the importance of combining read-level and assembly-level
 taxonomic QC rather than relying on assembly statistics alone.
@@ -116,7 +114,7 @@ pairwise Mash comparisons within the 15-isolate dataset.
 
 Snippy-core mapping showed substantial reference-aligned sequence across all
 isolates. CJ004 had the lowest aligned fraction at approximately 89.9%, while
-CJ007 had the highest at approximately 97.1%. :chatgpt-content-reference{index="5"}
+CJ007 had the highest at approximately 97.1%.
 
 Variant counts ranged from 4,722 in CJ007 to 18,186 in CJ002, showing
 considerable genomic diversity despite all isolates belonging to the same
