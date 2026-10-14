@@ -48,10 +48,10 @@ conda activate snippy-env
 conda config --env --set subdir osx-64
 ```
 
-ABRicate is an optional VFDB screening tool and is not in the main
-environment. Its dependencies did not solve natively in the checked Apple
-Silicon Conda setup, but did solve for `osx-64`. Install it separately and
-initialize its local databases:
+ABRicate is used for the VFDB screen and is not in the main environment. Its
+dependencies did not solve natively in the checked Apple Silicon Conda setup,
+but did solve for `osx-64`. Install it separately and initialize its local
+databases:
 
 ```bash
 CONDA_SUBDIR=osx-64 conda create -n abricate-env \
@@ -79,7 +79,7 @@ be run from the repository root. The default thread count is 4; set
 | `scripts/06b_batch_quast.sh` | Evaluate assemblies with QUAST |
 | `scripts/07_batch_mlst.sh` | Assign MLST profiles |
 | `scripts/08_batch_amrfinder.sh` | Run AMRFinderPlus, including all-mutations output |
-| `scripts/09_batch_vfdb.sh` | Optional ABRicate screen against VFDB |
+| `scripts/09_batch_vfdb.sh` | ABRicate screen of all isolates against VFDB |
 | `scripts/10_batch_snippy.sh` | Run reference-based Snippy per sample |
 | `scripts/11_batch_phylogeny.sh` | Create Snippy core alignments |
 | `scripts/12_batch_gubbins.sh` | Run recombination analysis with Gubbins |
@@ -98,13 +98,13 @@ KRAKEN_DB=/path/to/kraken2_database \
 
 The reference argument can be omitted when the reference is at the default
 path shown above. To reuse existing raw FASTQ files, set `SKIP_DOWNLOAD=1`.
-To include the optional VFDB screen, set `RUN_VFDB=1`; this requires
-`abricate-env` with its VFDB database initialized. `THREADS` defaults to 4.
-Environment names can be overridden with `MAIN_ENV`, `SNIPPY_ENV`,
-`GUBBINS_ENV`, `IQTREE_ENV`, and `ABRICATE_ENV`. The runner requires
-`KRAKEN_DB` because it performs both the routine Kraken2 screen and CJ006
-rescue. It writes per-stage logs to `results/logs/` and stops on the first
-failed stage.
+The runner includes the completed VFDB screen by default; it requires
+`abricate-env` with its VFDB database initialized. Set `RUN_VFDB=0` to skip
+that stage. `THREADS` defaults to 4. Environment names can be overridden
+with `MAIN_ENV`, `SNIPPY_ENV`, `GUBBINS_ENV`, `IQTREE_ENV`, and
+`ABRICATE_ENV`. The runner requires `KRAKEN_DB` because it performs both the
+routine Kraken2 screen and CJ006 rescue. It writes per-stage logs to
+`results/logs/` and stops on the first failed stage.
 
 To print the planned stages without executing them, use
 `DRY_RUN=1 ./run_pipeline.sh /path/to/reference.fasta`. This still validates
@@ -115,8 +115,9 @@ that the reference file exists.
 Individual scripts can also be run manually in the Conda environment
 appropriate to each stage. For the main environment, run download, read QC,
 Kraken2 screening, SPAdes assembly, CJ006 rescue, Mash, QUAST, MLST, and
-AMRFinderPlus in the sequence listed by the orchestrator. Run `09_batch_vfdb.sh`
-from `abricate-env` when desired. Run `10_batch_snippy.sh` and
+AMRFinderPlus in the sequence listed by the orchestrator. Run
+`09_batch_vfdb.sh` from `abricate-env` for the VFDB screen. Run
+`10_batch_snippy.sh` and
 `11_batch_phylogeny.sh` in `snippy-env`, followed by `12_batch_gubbins.sh` in
 `gubbins-env` and `13_batch_iqtree.sh` in `iqtree-env`.
 
@@ -238,10 +239,12 @@ assembly metrics are in `results/quast_batch/` and MLST results in
 
 ### 6. Virulence screening against VFDB
 
-The terminal history does not document completed VFDB results. This is an
-additional recommended analysis, not a claim that virulence screening was
-performed. AMRFinderPlus AMR profiling is not a substitute for a dedicated
-VFDB search.
+ABRicate/VFDB screening was performed across all 15 isolates. The analysis
+used `--db vfdb --minid 80 --mincov 80`. Repository analysis products include
+`Results/virulence_gene_frequency.tsv`,
+`Figures/variable_virulence_heatmap.png`, and
+`Figures/integrated_phylogeny_amr_virulence_v2.png`. AMRFinderPlus AMR
+profiling is separate from this dedicated virulence-gene screen.
 
 With ABRicate installed and its VFDB database initialized, run:
 
@@ -249,11 +252,11 @@ With ABRicate installed and its VFDB database initialized, run:
 ./scripts/09_batch_vfdb.sh
 ```
 
-The script uses example minimum identity and coverage thresholds of 80%.
-Per-sample candidate matches and the combined summary are written under
-`results/virulence/vfdb/`. Record the ABRicate and database versions and the
-thresholds with results. Database hits alone do not establish gene
-expression, functionality, or virulence phenotype.
+The script uses the same database and thresholds as the completed analysis:
+`--db vfdb --minid 80 --mincov 80`. Per-sample candidate matches and the
+combined ABRicate summary are written under `results/virulence/vfdb/`.
+Database hits alone do not establish gene expression, functionality, or
+virulence phenotype.
 
 ### 7. Reference-based variant calling
 
@@ -281,22 +284,29 @@ Snippy-core writes `results/phylogeny/core/core.full.aln`,
 alignments; Gubbins and IQ-TREE are separate stages for use in their dedicated
 environments.
 
-Run Gubbins in its dedicated environment, or use
-`scripts/12_batch_gubbins.sh` to process the full core alignment and collect
-its tree outputs:
+Run Gubbins in its dedicated environment with
+`scripts/12_batch_gubbins.sh`. It processes the full core alignment, collects
+tree outputs, and produces the recombination-filtered polymorphic-sites
+alignment at `results/phylogeny/gubbins/campy.filtered_polymorphic_sites.fasta`:
 
 ```bash
 conda activate gubbins-env
 ./scripts/12_batch_gubbins.sh
 ```
 
-The additional IQ-TREE maximum-likelihood analysis was separate from
-Gubbins/RAxML. An initial `+ASC` attempt on `campy_filtered_15.fasta` failed
-because the alignment contained 94 invariant sites. IQ-TREE generated
-`campy.varsites.phy`; the successful run used that variable-sites alignment.
-The reproducible script below extracts variable nucleotide columns from
-Snippy-core's `core.aln` into `campy.varsites.fasta` before running the same
-model search and support tests:
+The IQ-TREE analysis uses the Gubbins-filtered alignment, not the unfiltered
+Snippy core alignment. The script excludes the `Reference` record, extracts
+variable nucleotide sites from the remaining taxa, then runs IQ-TREE with
+ascertainment-bias correction. This follows the final analysis sequence:
+Snippy core alignment → Gubbins recombination filtering →
+`campy.filtered_polymorphic_sites.fasta` → remove `Reference` → variable sites
+only → IQ-TREE `+ASC`.
+
+An initial `+ASC` attempt on `campy_filtered_15.fasta` failed because the
+alignment contained 94 invariant sites. The successful analysis used a
+variable-sites alignment; the script below recreates that filtering from the
+Gubbins output and writes
+`results/phylogeny/iqtree/campy.filtered_polymorphic_sites.varsites.fasta`:
 
 ```bash
 conda activate iqtree-env
@@ -318,12 +328,14 @@ outputs were `campy_final.treefile`, `campy_final.contree`, and
 5. Assemble reads using SPAdes; genus-filter and reassemble CJ006 as needed.
 6. Evaluate assemblies using QUAST and assign types with MLST.
 7. Profile AMR determinants and mutations with AMRFinderPlus.
-8. Optionally screen candidate virulence genes against VFDB with ABRicate.
+8. Screen all isolates against VFDB with ABRicate (`--db vfdb --minid 80
+   --mincov 80`).
 9. Call reference-based variants with Snippy and create a core alignment.
 10. Run recombination-aware Gubbins/RAxML inference.
 11. Run the separate IQ-TREE maximum-likelihood analysis with `+ASC` and
     branch support tests.
 
-The Gubbins/RAxML and IQ-TREE analyses are distinct. CJ006 genus-level
-filtering is a troubleshooting rescue, not proof of single-species purity;
-VFDB screening is recommended but was not recorded as completed.
+The Gubbins/RAxML and IQ-TREE analyses are distinct, but the final IQ-TREE
+input is derived from Gubbins' recombination-filtered polymorphic-sites
+alignment. CJ006 genus-level filtering is a troubleshooting rescue, not proof
+of single-species purity.
