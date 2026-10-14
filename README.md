@@ -1,7 +1,6 @@
-# Corrected Draft: Campylobacter WGS Bioinformatics Pipeline
+# Campylobacter WGS Bioinformatics Pipeline
 
-This is the cleaned, working workflow extracted from the successful terminal history in the raw notes, excluding failed package installs and setup errors.
-
+This pipeline provides a complete workflow for processing Campylobacter jejuni whole-genome sequencing (WGS) data, from raw reads to downstream analysis.
 ## Study design and dataset
 - 15 Campylobacter jejuni isolates: CJ001–CJ015
 - Paired-end Illumina WGS reads in `data/raw/`
@@ -10,7 +9,7 @@ This is the cleaned, working workflow extracted from the successful terminal his
 ---
 
 ## Step 1: Raw read quality control and trimming
-Goal: remove adapters and low-quality bases before downstream analyses.
+Goal: removing adapters and low-quality bases before downstream analyses.
 
 Tools used:
 - `fastp`
@@ -44,7 +43,7 @@ Interpretation:
 ---
 
 ## Step 2: Contamination screening
-Goal: check whether each isolate had obvious contamination or taxonomy mismatch.
+Goal: checking whether each isolate had obvious contamination or taxonomy mismatch.
 
 Tool used:
 - `kraken2`
@@ -60,12 +59,12 @@ Outputs:
 - summary table in `results/kraken2_batch/kraken2_summary.csv`
 
 Purpose:
-- identify likely non-target or contaminated samples before assembly and phylogeny
+- To identify likely non-target or contaminated samples before assembly and phylogeny
 
 ---
 
 ## Step 3: Reference similarity / strain grouping check
-Goal: assess whether samples were close to the expected C. jejuni reference and whether one isolate was a good central representative for phylogeny.
+Goal: assessing whether samples were close to the expected C. jejuni reference and whether one isolate was a good central representative for phylogeny.
 
 Tools used:
 - `mash`
@@ -97,7 +96,7 @@ Key finding from the log:
 ---
 
 ## Step 4: De novo assembly
-Goal: construct contig assemblies from filtered reads.
+Goal: constructing contig assemblies from filtered reads.
 
 Tool used:
 - `spades.py`
@@ -222,8 +221,8 @@ The logs show multiple RAxML iterations and completion of the Gubbins analysis.
 
 ---
 
-## Final workflow summary
-The successful end-to-end pipeline was:
+## workflow summary
+The end-to-end piepeline:
 
 1. `fastp` quality filtering and adapter trimming
 2. `fastqc` and `multiqc` QC inspection
@@ -235,5 +234,3 @@ The successful end-to-end pipeline was:
 8. `snippy` reference-based SNP calling
 9. `snippy-core` core SNP alignment
 10. `Gubbins` + `RAxML` recombination-aware phylogenetic inference
-
-This is the corrected draft version of the working pipeline and represents the actual successful workflow recorded in the raw terminal history.
