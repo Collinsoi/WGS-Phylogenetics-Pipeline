@@ -81,39 +81,48 @@ be run from the repository root. The default thread count is 4; set
 | `scripts/08_batch_amrfinder.sh` | Run AMRFinderPlus, including all-mutations output |
 | `scripts/09_batch_vfdb.sh` | Optional ABRicate screen against VFDB |
 | `scripts/10_batch_snippy.sh` | Run reference-based Snippy per sample |
-| `scripts/11_batch_phylogeny.sh` | Create the Snippy core alignment; run available tree tools |
+| `scripts/11_batch_phylogeny.sh` | Create Snippy core alignments |
+| `scripts/12_batch_gubbins.sh` | Run recombination analysis with Gubbins |
+| `scripts/13_batch_iqtree.sh` | Filter to variable sites and run IQ-TREE |
 
-### Example run order
+### Run the complete workflow
 
-First install the environments above and ensure the reference is present. Set
-`KRAKEN_DB` to a local Kraken2 database for screening and CJ006 rescue.
+After installing the Conda environments above, the orchestrator runs the
+stages in workflow order and invokes each script in its required environment.
+Provide the Kraken2 database path and, if needed, a reference FASTA path:
 
 ```bash
-conda activate campy-wgs
-./scripts/02_download_remaining.sh
-./scripts/03_batch_fastp_qc.sh
-KRAKEN_DB=/path/to/kraken2_database ./scripts/04_batch_kraken2.sh
-./scripts/06_batch_spades.sh
-KRAKEN_DB=/path/to/kraken2_database ./scripts/04b_rescue_CJ006.sh
-./scripts/05_batch_mash.sh
-./scripts/06b_batch_quast.sh
-./scripts/07_batch_mlst.sh
-./scripts/08_batch_amrfinder.sh
-
-conda activate abricate-env
-./scripts/09_batch_vfdb.sh
-
-conda activate snippy-env
-./scripts/10_batch_snippy.sh
-./scripts/11_batch_phylogeny.sh
+KRAKEN_DB=/path/to/kraken2_database \
+  ./run_pipeline.sh /path/to/C_jejuni_NCTC11168.fasta
 ```
 
-The CJ006 rescue is optional; it requires KrakenTools'
-`extract_kraken_reads.py` as well as `KRAKEN_DB`. Run it after the initial
-SPAdes assemblies and before downstream analysis. Downstream scripts select
-the rescued CJ006 reads and assembly when those outputs exist. Run the
-standalone Gubbins and IQ-TREE commands shown under phylogeny below after
-creating the core alignment if those tools are in their separate environments.
+The reference argument can be omitted when the reference is at the default
+path shown above. To reuse existing raw FASTQ files, set `SKIP_DOWNLOAD=1`.
+To include the optional VFDB screen, set `RUN_VFDB=1`; this requires
+`abricate-env` with its VFDB database initialized. `THREADS` defaults to 4.
+Environment names can be overridden with `MAIN_ENV`, `SNIPPY_ENV`,
+`GUBBINS_ENV`, `IQTREE_ENV`, and `ABRICATE_ENV`. The runner requires
+`KRAKEN_DB` because it performs both the routine Kraken2 screen and CJ006
+rescue. It writes per-stage logs to `results/logs/` and stops on the first
+failed stage.
+
+To print the planned stages without executing them, use
+`DRY_RUN=1 ./run_pipeline.sh /path/to/reference.fasta`. This still validates
+that the reference file exists.
+
+### Run stages individually
+
+Individual scripts can also be run manually in the Conda environment
+appropriate to each stage. For the main environment, run download, read QC,
+Kraken2 screening, SPAdes assembly, CJ006 rescue, Mash, QUAST, MLST, and
+AMRFinderPlus in the sequence listed by the orchestrator. Run `09_batch_vfdb.sh`
+from `abricate-env` when desired. Run `10_batch_snippy.sh` and
+`11_batch_phylogeny.sh` in `snippy-env`, followed by `12_batch_gubbins.sh` in
+`gubbins-env` and `13_batch_iqtree.sh` in `iqtree-env`.
+
+The CJ006 rescue requires KrakenTools' `extract_kraken_reads.py` and
+`KRAKEN_DB`. Downstream scripts select rescued CJ006 reads and assembly when
+those outputs exist.
 
 ## Workflow
 
@@ -268,34 +277,30 @@ With the Snippy environment active, create the core alignment:
 ```
 
 Snippy-core writes `results/phylogeny/core/core.full.aln`,
-`core.aln`, `core.txt`, and `core.vcf`. Gubbins and IQ-TREE execute inside
-this script only if the commands are available on `PATH`; in the recorded
-Apple Silicon setup they were installed in separate environments.
+`core.aln`, `core.txt`, and `core.vcf`. The script only creates these core
+alignments; Gubbins and IQ-TREE are separate stages for use in their dedicated
+environments.
 
-Run Gubbins in its dedicated environment:
+Run Gubbins in its dedicated environment, or use
+`scripts/12_batch_gubbins.sh` to process the full core alignment and collect
+its tree outputs:
 
 ```bash
 conda activate gubbins-env
-run_gubbins.py \
-  --prefix results/phylogeny/gubbins/campy \
-  results/phylogeny/core/core.full.aln
+./scripts/12_batch_gubbins.sh
 ```
 
 The additional IQ-TREE maximum-likelihood analysis was separate from
 Gubbins/RAxML. An initial `+ASC` attempt on `campy_filtered_15.fasta` failed
 because the alignment contained 94 invariant sites. IQ-TREE generated
-`campy.varsites.phy`; the successful run used that variable-sites alignment:
+`campy.varsites.phy`; the successful run used that variable-sites alignment.
+The reproducible script below extracts variable nucleotide columns from
+Snippy-core's `core.aln` into `campy.varsites.fasta` before running the same
+model search and support tests:
 
 ```bash
 conda activate iqtree-env
-iqtree \
-  -s results/phylogeny/iqtree/campy.varsites.phy \
-  -st DNA \
-  -m MFP+ASC \
-  -B 1000 \
-  -alrt 1000 \
-  -T AUTO \
-  --prefix results/phylogeny/iqtree/campy_final
+./scripts/13_batch_iqtree.sh
 ```
 
 This used ModelFinder with ascertainment-bias correction (`+ASC`), 1,000
