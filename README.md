@@ -1,18 +1,130 @@
-# Campylobacter WGS Bioinformatics Pipeline
+# Campylobacter WGS Comparative Genomics Pipeline
 
-This repository documents a whole-genome sequencing workflow for 15
-*Campylobacter jejuni* isolates (CJ001–CJ015), from paired-end Illumina reads
-through assembly, typing, AMR screening, variant calling, and phylogenetic
-analysis.
+A reproducible bacterial whole-genome sequencing workflow for quality control,
+assembly, MLST, antimicrobial-resistance profiling, virulence screening,
+recombination-aware core-SNP phylogenetics, and integrated comparative analysis
+of poultry-associated *Campylobacter jejuni* isolates.
 
-## Study design and inputs
+## Project overview
+
+This project uses a 15-isolate subset of publicly available *Campylobacter
+jejuni* Illumina whole-genome sequencing data to demonstrate an end-to-end
+comparative genomics workflow. The analysis integrates read quality control,
+taxonomic screening, de novo assembly, sequence typing, AMR and virulence
+profiling, core-genome SNP analysis, recombination filtering, and
+maximum-likelihood phylogenetics.
+
+The project was developed as a reproducible training and portfolio workflow,
+with emphasis on quality control, transparent troubleshooting, and biological
+interpretation rather than population-level epidemiology.
+
+## Research question
+
+How are antimicrobial-resistance and virulence determinants distributed among
+genomic lineages of poultry-associated *Campylobacter jejuni*?
+
+### Working hypothesis
+
+Genetically related isolates are expected to show more similar AMR and
+virulence profiles than distantly related isolates, although accessory gene
+gain/loss and recombination may introduce within-lineage variation.
+
+## Dataset
+
+The analysis used 15 *C. jejuni* isolates selected from NCBI BioProject
+`PRJNA941181`.
 
 - Samples: CJ001–CJ015
-- Sample-to-run mapping: `metadata/sample_metadata.csv`
-- Raw paired reads: `data/raw/`
-- Reference genome: `references/species/C_jejuni_NCTC11168.fasta`
+- Collection years: 2008–2016
+- Host: *Gallus gallus*
+- Country: Italy
+- Sequencing platform: Illumina NextSeq 500
+- Library layout: paired-end
+- Sample metadata: [`metadata/sample_metadata.csv`](metadata/sample_metadata.csv)
 
-## Conda environments
+This subset was selected for workflow development and comparative analysis and
+is not intended to represent the full BioProject population.
+
+## Workflow summary
+
+```text
+NCBI SRA paired reads
+        ↓
+fastp + FastQC + MultiQC
+        ↓
+Kraken2 taxonomic screening
+        ↓
+SPAdes de novo assembly
+        ↓
+CJ006 contamination rescue + Mash comparison
+        ↓
+QUAST assembly QC
+        ↓
+MLST typing
+        ↓
+AMRFinderPlus
+        ↓
+ABRicate + VFDB
+        ↓
+Snippy variant calling
+        ↓
+snippy-core
+        ↓
+Gubbins recombination filtering
+        ↓
+IQ-TREE maximum-likelihood phylogeny
+        ↓
+Integrated lineage / AMR / virulence comparison
+```
+
+The full runnable workflow is implemented through the scripts in `scripts/`
+and the top-level `run_pipeline.sh` orchestrator.
+
+## Key findings
+
+- The 15-isolate subset contained substantial lineage diversity, with 13 MLST
+  sequence types. CJ008, CJ011, and CJ015 were all ST-2116 and formed a
+  strongly supported core-SNP phylogenetic cluster.
+- AMRFinderPlus identified widespread quinolone-resistance-associated
+  `gyrA` variation. `gyrA_T86I` was detected in 12/15 isolates, while
+  `tet(O)` occurred in 9/15. CJ004 additionally carried `23S_A2075G`.
+- VFDB screening identified 128 virulence-associated genes, including 83
+  genes shared by all isolates and 45 variable genes, indicating a conserved
+  virulence backbone with accessory variation.
+- The ST-2116 isolates showed concordance across multiple genomic layers:
+  identical MLST type, strong phylogenetic clustering, similar AMR profiles,
+  and highly similar virulence profiles.
+- CJ006 was a major QC outlier. Its original assembly was ~2.97 Mb with
+  43.91% GC and strong *Bifidobacterium pullorum* contamination. Genus-level
+  *Campylobacter* read filtering and reassembly produced a ~1.74 Mb assembly
+  with 30.12% GC, 29 contigs, and N50 of ~130 kb.
+- Gubbins detected heterogeneous recombination across branches, supporting the
+  use of a recombination-filtered alignment for final phylogenetic inference.
+
+Overall, the results support the working hypothesis that closely related
+isolates tend to share more similar AMR and virulence profiles, while
+recombination and accessory gene variation introduce additional differences.
+
+> These observations describe a selected 15-isolate training subset and should
+> not be interpreted as population-level prevalence estimates.
+
+## Integrated comparative analysis
+
+![Integrated phylogeny, AMR and virulence profiles](Figures/integrated_phylogeny_amr_virulence_v2.png)
+
+The integrated figure combines the recombination-filtered core-SNP phylogeny
+with AMR determinants, variable virulence genes, MLST assignments, and sample
+metadata.
+
+Additional figures:
+
+- [Core-SNP phylogeny](Figures/core_snp_phylogeny.png)
+- [AMR heatmap](Figures/amr_heatmap.png)
+- [Variable virulence heatmap](Figures/variable_virulence_heatmap.png)
+
+## Reproducibility
+
+### Main environment
 
 The main analysis environment is defined in `environment.yml`. Create and
 activate it with:
@@ -27,9 +139,9 @@ Mash, SPAdes, QUAST, MLST, AMRFinderPlus, Biopython, Matplotlib, and SciPy.
 QUAST is installed from PyPI in this environment because the native Apple
 Silicon Conda package did not solve in the package check for this workflow.
 
-On Apple Silicon macOS, Snippy, Gubbins, and IQ-TREE were run in dedicated
-`osx-64` Conda environments under Rosetta because of package compatibility
-constraints. The recorded setup was:
+On Apple Silicon macOS, Snippy, Gubbins, IQ-TREE, and ABRicate were run in
+dedicated `osx-64` Conda environments under Rosetta because of package
+compatibility constraints. The recorded phylogeny-tool setup was:
 
 ```bash
 CONDA_SUBDIR=osx-64 conda create -n snippy-env \
@@ -59,6 +171,29 @@ CONDA_SUBDIR=osx-64 conda create -n abricate-env \
 conda activate abricate-env
 abricate --setupdb
 ```
+
+### Run the workflow
+
+The full pipeline requires a Kraken2 database and the reference FASTA:
+
+```bash
+KRAKEN_DB=/path/to/kraken2_database \
+  ./run_pipeline.sh /path/to/C_jejuni_NCTC11168.fasta
+```
+
+Useful options:
+
+```bash
+export SKIP_DOWNLOAD=1  # reuse existing raw FASTQ files
+export RUN_VFDB=1       # include the optional VFDB screen
+export THREADS=8        # set the per-tool thread count
+export DRY_RUN=1        # print planned stages without running analyses
+```
+
+The VFDB stage is skipped by default and uses the separately configured
+`abricate-env` when enabled. The pipeline writes stage-specific analysis
+outputs under `results/`, read data under `data/`, and stops if a required
+stage fails.
 
 ## Individual scripts
 
@@ -97,10 +232,7 @@ KRAKEN_DB=/path/to/kraken2_database \
 ```
 
 The reference argument can be omitted when the reference is at the default
-path shown above. To reuse existing raw FASTQ files, set `SKIP_DOWNLOAD=1`.
-The VFDB stage is optional and skipped by default. Set `RUN_VFDB=1` to run it
-using the separately configured `abricate-env` with its VFDB database
-initialized. `THREADS` defaults to 4. Environment names can be overridden
+path shown above. `THREADS` defaults to 4. Environment names can be overridden
 with `MAIN_ENV`, `SNIPPY_ENV`, `GUBBINS_ENV`, `IQTREE_ENV`, and
 `ABRICATE_ENV`. The runner requires `KRAKEN_DB` because it performs both the
 routine Kraken2 screen and CJ006 rescue. It writes per-stage logs to
@@ -162,9 +294,11 @@ with `kraken2_summary.csv`.
 
 #### CJ006 contamination discovery and rescue
 
-The initial CJ006 assembly was 3.57 Mbp, unusually large for the expected
-Campylobacter genome. Kraken2 classified 69.30% of its contigs, prompting
-read-level screening and a targeted reassembly.
+The initial CJ006 assembly was ~2.97 Mbp, unusually large for the expected
+*Campylobacter* genome, with 43.91% GC, 1,402 contigs, and an N50 of
+91,771 bp. Assembly-level Kraken2 classification assigned 61.25% of contigs
+to *Bifidobacterium pullorum* and 1.51% to *Campylobacter*, prompting
+read-level screening and targeted reassembly.
 
 Kraken2 processed 976,004 paired read records (287.85 Mbp); 884,318 were
 classified (90.61%). KrakenTools `extract_kraken_reads.py` was used with taxid
@@ -172,12 +306,12 @@ classified (90.61%). KrakenTools `extract_kraken_reads.py` was used with taxid
 These reads were reassembled with SPAdes into
 `results/assembly_batch/CJ006_clean/`. The resulting assembly was 1.74 Mbp.
 
-The cleaned assembly still had contigs classified to multiple
-Campylobacter species, including *C. jejuni*, *C. coli*, and *C. lari*.
-Because the extraction retained the whole genus, this step reduces
-non-Campylobacter sequence but does not establish that CJ006 is a pure
-*C. jejuni* isolate. Review the post-rescue taxonomic report before treating
-it as a confirmed single-species sample.
+The rescued assembly was approximately 1.74 Mb, 30.12% GC, 29 contigs, and
+N50 130,036 bp. Kraken2 classified the rescued assembly as predominantly
+*Campylobacter* and no longer showed the strong *Bifidobacterium* signal.
+Because the extraction retained the whole genus, it does not establish that
+CJ006 is a pure *C. jejuni* isolate; review the post-rescue taxonomic report
+before treating it as a confirmed single-species sample.
 
 Run the scripted rescue after initial assembly:
 
@@ -319,23 +453,81 @@ ultrafast bootstrap replicates (`-B 1000`), and 1,000 SH-aLRT replicates
 outputs were `campy_final.treefile`, `campy_final.contree`, and
 `campy_final.iqtree` under `results/phylogeny/iqtree/`.
 
-## Workflow summary
+## Detailed results
 
-1. Download paired reads from SRA using the sample metadata.
-2. Trim and QC reads with fastp, FastQC, and MultiQC.
-3. Screen read pairs with Kraken2; investigate the CJ006 contamination signal.
-4. Check reference similarity and pairwise distances with Mash.
-5. Assemble reads using SPAdes; genus-filter and reassemble CJ006 as needed.
-6. Evaluate assemblies using QUAST and assign types with MLST.
-7. Profile AMR determinants and mutations with AMRFinderPlus.
-8. Screen all isolates against VFDB with ABRicate (`--db vfdb --minid 80
-   --mincov 80`).
-9. Call reference-based variants with Snippy and create a core alignment.
-10. Run recombination-aware Gubbins/RAxML inference.
-11. Run the separate IQ-TREE maximum-likelihood analysis with `+ASC` and
-    branch support tests.
+A more complete quantitative interpretation of assembly QC, AMR determinants,
+virulence-gene distribution, recombination, and phylogenetic structure is
+available in [`RESULTS.md`](RESULTS.md).
 
-The Gubbins/RAxML and IQ-TREE analyses are distinct, but the final IQ-TREE
-input is derived from Gubbins' recombination-filtered polymorphic-sites
-alignment. CJ006 genus-level filtering is a troubleshooting rescue, not proof
-of single-species purity.
+## Limitations
+
+- The analysis uses a selected 15-isolate subset and is not intended for
+  population-level prevalence estimates.
+- AMR results are genotype-based and were not validated against phenotypic
+  antimicrobial susceptibility measurements.
+- VFDB matches indicate sequence similarity to virulence-associated genes and
+  do not demonstrate expression or virulence phenotype.
+- The phylogeny is reference-based and recombination-filtered; branch
+  relationships indicate genomic relatedness within this dataset, not direct
+  transmission or ancestry.
+- CJ006 was rescued by genus-level filtering, which substantially reduced
+  contamination but does not prove complete single-species purity.
+
+## Main tools
+
+- fastp
+- FastQC / MultiQC
+- Kraken2 / KrakenTools
+- Mash
+- SPAdes
+- QUAST
+- MLST
+- AMRFinderPlus
+- ABRicate / VFDB
+- Snippy
+- Gubbins
+- IQ-TREE
+- Python / Biopython / Matplotlib / SciPy
+
+## Repository structure
+
+```text
+WGS-Phylogenetics-Pipeline/
+├── README.md
+├── RESULTS.md
+├── environment.yml
+├── run_pipeline.sh
+├── metadata/
+│   └── sample_metadata.csv
+├── scripts/
+│   ├── 02_download_remaining.sh
+│   ├── 03_batch_fastp_qc.sh
+│   ├── 04_batch_kraken2.sh
+│   ├── 04b_rescue_CJ006.sh
+│   ├── 05_batch_mash.sh
+│   ├── 06_batch_spades.sh
+│   ├── 06b_batch_quast.sh
+│   ├── 07_batch_mlst.sh
+│   ├── 08_batch_amrfinder.sh
+│   ├── 09_batch_vfdb.sh
+│   ├── 10_batch_snippy.sh
+│   ├── 11_batch_phylogeny.sh
+│   ├── 12_batch_gubbins.sh
+│   ├── 13_batch_iqtree.sh
+│   └── common.sh
+├── Results/
+│   ├── mlst_results.tsv
+│   ├── amr_summary.tsv
+│   ├── virulence_gene_frequency.tsv
+│   ├── core.txt
+│   └── campy_final.treefile
+└── Figures/
+    ├── core_snp_phylogeny.png
+    ├── amr_heatmap.png
+    ├── variable_virulence_heatmap.png
+    └── integrated_phylogeny_amr_virulence_v2.png
+```
+
+`Results/` contains the curated result summaries and tree shown in this
+repository. The runnable pipeline writes its stage outputs under lowercase
+`results/` and reads/writes sequencing data under `data/`.
