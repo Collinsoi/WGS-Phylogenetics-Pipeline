@@ -21,7 +21,7 @@ Optional:
   THREADS               Threads per tool (default: 4)
   RESCUE_SAMPLE         Sample to genus-filter (default: CJ006)
   KRAKEN_TAXID          Rescue taxon ID (default: 194)
-  RUN_VFDB              Set to 0 to skip ABRicate/VFDB (default: 1)
+  RUN_VFDB              Set to 1 to run ABRicate/VFDB (default: 0)
   SKIP_DOWNLOAD         Set to 1 to reuse existing raw FASTQ files
   DRY_RUN               Set to 1 to print planned stages without running them
   MAIN_ENV              Main environment name (default: campy-wgs)
@@ -46,7 +46,7 @@ THREADS="${THREADS:-4}"
 REFERENCE="${1:-${REFERENCE:-$PROJECT_ROOT/references/species/C_jejuni_NCTC11168.fasta}}"
 RESCUE_SAMPLE="${RESCUE_SAMPLE:-CJ006}"
 KRAKEN_TAXID="${KRAKEN_TAXID:-194}"
-RUN_VFDB="${RUN_VFDB:-1}"
+RUN_VFDB="${RUN_VFDB:-0}"
 SKIP_DOWNLOAD="${SKIP_DOWNLOAD:-0}"
 DRY_RUN="${DRY_RUN:-0}"
 MAIN_ENV="${MAIN_ENV:-campy-wgs}"
@@ -156,7 +156,7 @@ run_stage "AMRFinderPlus screening" "$MAIN_ENV" "08_batch_amrfinder.sh"
 if [[ "$RUN_VFDB" == 1 ]]; then
   run_stage "VFDB virulence screening" "$ABRICATE_ENV" "09_batch_vfdb.sh"
 else
-  echo "Skipping VFDB screening (RUN_VFDB=0)."
+  echo "Skipping optional VFDB screening by default (set RUN_VFDB=1 to run it)."
 fi
 
 run_stage "Snippy variant calling" "$SNIPPY_ENV" "10_batch_snippy.sh"

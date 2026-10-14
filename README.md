@@ -98,9 +98,9 @@ KRAKEN_DB=/path/to/kraken2_database \
 
 The reference argument can be omitted when the reference is at the default
 path shown above. To reuse existing raw FASTQ files, set `SKIP_DOWNLOAD=1`.
-The runner includes the completed VFDB screen by default; it requires
-`abricate-env` with its VFDB database initialized. Set `RUN_VFDB=0` to skip
-that stage. `THREADS` defaults to 4. Environment names can be overridden
+The VFDB stage is optional and skipped by default. Set `RUN_VFDB=1` to run it
+using the separately configured `abricate-env` with its VFDB database
+initialized. `THREADS` defaults to 4. Environment names can be overridden
 with `MAIN_ENV`, `SNIPPY_ENV`, `GUBBINS_ENV`, `IQTREE_ENV`, and
 `ABRICATE_ENV`. The runner requires `KRAKEN_DB` because it performs both the
 routine Kraken2 screen and CJ006 rescue. It writes per-stage logs to
