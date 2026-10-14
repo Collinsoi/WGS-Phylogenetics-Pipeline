@@ -1,0 +1,16 @@
+sample	genes	gyrA	23S	other_mutations
+CJ001	arsP;blaOXA-193	WT/no known resistance mutation	WT/no known resistance mutation	-
+CJ002	blaOXA-630;gyrA_T86I;tet(O)	gyrA_T86I	WT/no known resistance mutation	-
+CJ003	arsP;blaOXA-193;blaOXA-61_G-57T;gyrA_T86I	gyrA_T86I	WT/no known resistance mutation	blaOXA-61_G-57T
+CJ004	23S_A2075G;blaOXA-184;cmeB;gyrA_T86I;tet(O)	gyrA_T86I	23S_A2075G	-
+CJ005	arsP;blaOXA-193;blaOXA-61_G-57T;tet(O)	WT/no known resistance mutation	WT/no known resistance mutation	blaOXA-61_G-57T
+CJ006	blaOXA-193;blaOXA-61_G-57T;gyrA_T86I;rplV_A103V	gyrA_T86I	WT/no known resistance mutation	blaOXA-61_G-57T;rplV_A103V
+CJ007	blaOXA-193;gyrA_T86I;tet(O)	gyrA_T86I	WT/no known resistance mutation	-
+CJ008	blaOXA-193;blaOXA-61_G-57T;gyrA_T86I;tet(O)	gyrA_T86I	WT/no known resistance mutation	blaOXA-61_G-57T
+CJ009	acr3;arsP;blaOXA-193;blaOXA-61_G-57T;gyrA_T86V;tet(O)	gyrA_T86V	WT/no known resistance mutation	blaOXA-61_G-57T
+CJ010	blaOXA;blaOXA-61_G-57T;cmeB;gyrA_T86I;tet(O)	gyrA_T86I	WT/no known resistance mutation	blaOXA-61_G-57T
+CJ011	blaOXA-193;blaOXA-61_G-57T;gyrA_T86I;tet(O)	gyrA_T86I	WT/no known resistance mutation	blaOXA-61_G-57T
+CJ012	acr3;arsP;gyrA_T86I	gyrA_T86I	WT/no known resistance mutation	-
+CJ013	blaOXA-184;gyrA_T86I;rplV_A103V;tet(O)	gyrA_T86I	WT/no known resistance mutation	rplV_A103V
+CJ014	blaOXA-184;cmeB;gyrA_T86I	gyrA_T86I	WT/no known resistance mutation	-
+CJ015	blaOXA-193;blaOXA-61_G-57T;gyrA_T86I	gyrA_T86I	WT/no known resistance mutation	blaOXA-61_G-57T

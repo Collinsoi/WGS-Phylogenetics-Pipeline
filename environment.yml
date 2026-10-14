@@ -1,0 +1,24 @@
+name: campy-wgs
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - biopython
+  - matplotlib
+  - scipy
+  - sra-tools
+  - fastp
+  - fastqc
+  - multiqc
+  - seqkit
+  - kraken2
+  - krakentools
+  - mash
+  - spades
+  - mlst
+  - ncbi-amrfinderplus
+  - pip:
+      - quast
